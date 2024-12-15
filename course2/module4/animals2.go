@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
-	"errors"
+	"os"
+	"strings"
 )
 
 type Animal interface {
@@ -11,97 +13,95 @@ type Animal interface {
 	Speak()
 }
 
-type Cow struct {
-	name       string
-	food       string
-	locomotion string
-	noise      string
+type Cow struct{}
+
+func (c Cow) Eat()   { fmt.Println("grass") }
+func (c Cow) Move()  { fmt.Println("walk") }
+func (c Cow) Speak() { fmt.Println("moo") }
+
+type Bird struct{}
+
+func (b Bird) Eat()   { fmt.Println("worms") }
+func (b Bird) Move()  { fmt.Println("fly") }
+func (b Bird) Speak() { fmt.Println("peep") }
+
+type Snake struct{}
+
+func (s Snake) Eat()   { fmt.Println("mice") }
+func (s Snake) Move()  { fmt.Println("slither") }
+func (s Snake) Speak() { fmt.Println("hsss") }
+
+type Zoo struct {
+	animals map[string]Animal
 }
 
-type Bird struct {
-	name       string
-	food       string
-	locomotion string
-	noise      string
+func NewZoo() *Zoo {
+	return &Zoo{animals: make(map[string]Animal)}
 }
 
-type Snake struct {
+func (zoo Zoo) AddAnimal(name string, animal Animal) {
+	zoo.animals[name] = animal
+	fmt.Println("Created it!")
 }
 
-
-func (cow Cow) Eat() {
-	fmt.Println(cow.food)
-}
-
-func (cow Cow) Move() {
-	fmt.Println(cow.locomotion)
-}
-func (cow Cow) Speak() {
-	fmt.Println(cow.noise)
-}
-
-func (bird Bird) Eat() {
-	fmt.Println(bird.food)
-}
-
-func (bird Bird) Move() {
-	fmt.Println(bird.locomotion)
-}
-func (bird Bird) Speak() {
-	fmt.Println(bird.noise)
-}
-
-func NewCow(name string) *Cow {
-	return &Cow{name: name, food: "grass", locomotion: "walk", noise: "moo"}
-}
-
-
-func NewBird(name string) *Bird {
-	return &Bird{name: name, food: "worms", locomotion: "fly", noise: "peep"}
-}
-
-
-func FindAnimalByName(zoo []Animal, name string) (Animal, error) {
-	for _, animal := range zoo {
-		switch sh := animal.(type) {
-		case Cow:
-			if sh.name == name{
-				return sh,nil
-			} else{
-				return nil, errors.New("not found")
-			} 
-		case Bird:
-			if sh.name == name{
-				return sh,nil
-			} else{
-				return nil, errors.New("not found")
-			} 
-		default:
-			return nil, errors.New("animal not found")
-		}
-
-	}
-	return nil,errors.New("animal not found")
+func (zoo Zoo) FindAnimal(name string) (Animal, bool) {
+	animal, found := zoo.animals[name]
+	return animal, found
 }
 
 func main() {
+	zoo := NewZoo()
 
-	var cow = NewCow("vaca lechera")
-	var bird = NewBird("piolin")
+	scanner := bufio.NewScanner(os.Stdin)
 
-	zoo := []Animal{}
+	for {
+		fmt.Print("> ")
+		scanner.Scan()
+		input := strings.TrimSpace(scanner.Text())
+		parts := strings.Fields(input)
 
-	zoo = append(zoo, *cow)
+		if len(parts) != 3 {
+			fmt.Println("Invalid command. Please use 'newanimal' or 'query'.")
+			continue
+		}
 
-	zoo = append(zoo, *bird)
+		command, name, argument := parts[0], parts[1], parts[2]
 
-	found, err := FindAnimalByName(zoo, "vaca lechera")
+		switch command {
+		case "newanimal":
+			var animal Animal
+			switch argument {
+			case "cow":
+				animal = Cow{}
+			case "bird":
+				animal = Bird{}
+			case "snake":
+				animal = Snake{}
+			default:
+				fmt.Println("Invalid animal type. Use 'cow', 'bird', or 'snake'.")
+				continue
+			}
+			zoo.AddAnimal(name, animal)
 
-	fmt.Println(found)
+		case "query":
+			animal, exists := zoo.FindAnimal(name)
+			if !exists {
+				fmt.Println("Animal not found.")
+				continue
+			}
 
-	if (err == nil){
-		found.Eat()
+			switch argument {
+			case "eat":
+				animal.Eat()
+			case "move":
+				animal.Move()
+			case "speak":
+				animal.Speak()
+			default:
+				fmt.Println("Invalid query type. Use 'eat', 'move', or 'speak'.")
+			}
+		default:
+			fmt.Println("Invalid command. Use 'newanimal' or 'query'.")
+		}
 	}
-
-
 }
